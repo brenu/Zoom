@@ -52,6 +52,12 @@ class View {
   setParticipants(count) {
     const myself = 1;
     const participants = document.getElementById("participants");
-    participants.innerHTML(count + myself);
+    participants.innerHTML = count + myself;
+  }
+
+  removeVideoElement(id) {
+    const element = document.getElementById(id);
+
+    element.remove();
   }
 }
