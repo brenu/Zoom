@@ -12,6 +12,7 @@ class Business {
     this.currentPeer = {};
 
     this.peers = new Map();
+    this.usersRecordings = new Map();
   }
 
   static initialize(deps) {
@@ -21,6 +22,8 @@ class Business {
   }
 
   async _init() {
+    this.view.configureRecordButton(this.onRecordPressed.bind(this));
+
     this.currentStream = await this.media.getCamera();
     this.socket = this.socketBuilder
       .setOnUserConnected(this.onUserConnected())
@@ -40,8 +43,14 @@ class Business {
   }
 
   addVideoStream(userId, stream = this.currentStream) {
-    const isCurrentId = false;
+    const recorderInstance = new Recorder(userId, stream);
+    this.usersRecordings.set(recorderInstance.filename, recorderInstance);
 
+    if (this.recordingEnabled) {
+      recorderInstance.startRecording();
+    }
+
+    const isCurrentId = false;
     this.view.renderVideo({
       userId,
       muted: true,
@@ -113,5 +122,35 @@ class Business {
     return (call) => {
       console.log("Call closed!", call.peer);
     };
+  }
+
+  onRecordPressed(recordingEnabled) {
+    this.recordingEnabled = recordingEnabled;
+    console.log(this.recordingEnabled);
+    for (const [key, value] of this.usersRecordings) {
+      if (this.recordingEnabled) {
+        value.startRecording();
+        continue;
+      }
+
+      this.stopRecording(key);
+    }
+  }
+
+  // If an user join and exits the call during recording
+  // We have to stop his/her previous recordings
+  async stopRecording(userId) {
+    const usersRecordings = this.usersRecordings;
+    for (const [key, value] of usersRecordings) {
+      const isContextUser = key.includes(userId);
+
+      if (!isContextUser) continue;
+
+      const rec = value;
+      const isRecordingActive = rec.recordingActive;
+      if (!isRecordingActive) continue;
+
+      await rec.stopRecording();
+    }
   }
 }
