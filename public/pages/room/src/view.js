@@ -2,6 +2,8 @@ class View {
   constructor() {
     this.recorderBtn = document.getElementById("record");
     this.leaveBtn = document.getElementById("leave");
+    this.videoBtn = document.getElementById("video-button");
+    this.muteBtn = document.getElementById("mute-button");
   }
 
   createVideoElement({ muted = true, src, srcObject }) {
@@ -62,6 +64,14 @@ class View {
     this.recorderBtn.style.color = isActive ? "red" : "white";
   }
 
+  toggleVideoButtonColor(isActive = true) {
+    this.videoBtn.style.color = isActive ? "red" : "gray";
+  }
+
+  toggleMuteButtonColor(isActive = true) {
+    this.muteBtn.style.color = isActive ? "red" : "gray";
+  }
+
   onRecordClick(command) {
     this.recordingEnabled = false;
     return () => {
@@ -81,6 +91,30 @@ class View {
     };
   }
 
+  onVideoClick(command, hasSource) {
+    this.isVideoStopped = false;
+    return () => {
+      if (hasSource) {
+        const isActive = (this.isVideoStopped = !this.isVideoStopped);
+        command(this.isVideoStopped);
+
+        this.toggleVideoButtonColor(isActive);
+      }
+    };
+  }
+
+  onMuteClick(command, hasSource) {
+    this.isMuted = false;
+    return () => {
+      if (hasSource) {
+        const isActive = (this.isMuted = !this.isMuted);
+        command(this.isMuted);
+
+        this.toggleMuteButtonColor(isActive);
+      }
+    };
+  }
+
   configureRecordButton(command) {
     this.recorderBtn.addEventListener("click", this.onRecordClick(command));
   }
@@ -89,11 +123,17 @@ class View {
     this.leaveBtn.addEventListener("click", this.onLeaveClick(command));
   }
 
-  configureVideoButton(command) {
-    //
+  configureVideoButton(command, hasSource) {
+    this.videoBtn.addEventListener(
+      "click",
+      this.onVideoClick(command, hasSource)
+    );
   }
 
-  configureMuteButton(command) {
-    //
+  configureMuteButton(command, hasSource) {
+    this.muteBtn.addEventListener(
+      "click",
+      this.onMuteClick(command, hasSource)
+    );
   }
 }

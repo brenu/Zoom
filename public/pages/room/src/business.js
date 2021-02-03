@@ -3,6 +3,8 @@ class Business {
     this.room = room;
     this.media = media;
     this.view = view;
+    this.hasAudio = false;
+    this.hasVideo = false;
 
     this.socketBuilder = socketBuilder;
     this.peerBuilder = peerBuilder;
@@ -22,13 +24,19 @@ class Business {
   }
 
   async _init() {
-    this.view.configureRecordButton(this.onRecordPressed.bind(this));
-    this.view.configureLeaveButton(this.onLeavePressed.bind(this));
-    this.view.configureVideoButton(this.onVideoPressed.bind(this));
-    this.view.configureMuteButton(this.onMutePressed.bind(this));
-
     try {
       this.currentStream = await this.media.getCamera();
+      if (this.currentStream.getAudioTracks().length) {
+        this.hasAudio = true;
+      } else {
+        this.view.toggleVideoButtonColor(true);
+      }
+
+      if (this.currentStream.getVideoTracks().length) {
+        this.hasVideo = true;
+      } else {
+        this.view.toggleMuteButtonColor(true);
+      }
     } catch (error) {
       const emptyAudio = this.media.createEmptyAudioTrack();
       const emptyVideo = this.media.createEmptyVideoTrack({
@@ -37,7 +45,17 @@ class Business {
       });
 
       this.currentStream = new MediaStream([emptyAudio, emptyVideo]);
+      this.view.toggleVideoButtonColor(true);
+      this.view.toggleMuteButtonColor(true);
     }
+
+    this.view.configureRecordButton(this.onRecordPressed.bind(this));
+    this.view.configureLeaveButton(this.onLeavePressed.bind(this));
+    this.view.configureMuteButton(this.onMutePressed.bind(this), this.hasAudio);
+    this.view.configureVideoButton(
+      this.onVideoPressed.bind(this),
+      this.hasVideo
+    );
 
     this.socket = this.socketBuilder
       .setOnUserConnected(this.onUserConnected())
@@ -76,15 +94,12 @@ class Business {
 
   onUserConnected() {
     return (userId) => {
-      console.log("user connected!", userId);
       this.currentPeer.call(userId, this.currentStream);
     };
   }
 
   onUserDisconnected() {
     return (userId) => {
-      console.log("user disconnected!", userId);
-
       if (this.peers.has(userId)) {
         this.peers.get(userId).call.close();
         this.peers.delete(userId);
@@ -105,14 +120,12 @@ class Business {
   onPeerConnectionOpened() {
     return (peer) => {
       const id = peer.id;
-      console.log("Peer!!!", peer);
       this.socket.emit("join-room", this.room, id);
     };
   }
 
   onPeerCallReceived() {
     return (call) => {
-      console.log("Answering call", call);
       call.answer(this.currentStream);
     };
   }
@@ -121,10 +134,8 @@ class Business {
     return (call, stream) => {
       const callerId = call.peer;
       if (this.peers.has(callerId)) {
-        console.log("Calling twice, ignoring second call...", callerId);
         return;
       }
-      console.log("call received!", call);
       this.addVideoStream(callerId, stream);
       this.peers.set(callerId, { call });
       this.view.setParticipants(this.peers.size);
@@ -133,20 +144,16 @@ class Business {
 
   onPeerCallError() {
     return (call, error) => {
-      console.log("A call error ocurred", error);
       this.view.removeVideoElement(call.peer);
     };
   }
 
   onPeerCallClose() {
-    return (call) => {
-      console.log("Call closed!", call.peer);
-    };
+    return (call) => {};
   }
 
   onRecordPressed(recordingEnabled) {
     this.recordingEnabled = recordingEnabled;
-    console.log(this.recordingEnabled);
     for (const [key, value] of this.usersRecordings) {
       if (this.recordingEnabled) {
         value.startRecording();
@@ -168,12 +175,14 @@ class Business {
     this.usersRecordings.forEach((value, key) => value.download());
   }
 
-  onVideoPressed() {
-    console.log("Stopped filming!");
+  onVideoPressed(isInactive) {
+    this.hasVideo = !isInactive;
+    this.currentStream.getVideoTracks()[0].enabled = this.hasVideo;
   }
 
-  onMutePressed() {
-    console.log("Stopped recording audio!");
+  onMutePressed(isInactive) {
+    this.hasAudio = !isInactive;
+    this.currentStream.getAudioTracks()[0].enabled = this.hasAudio;
   }
 
   // If an user join and exits the call during recording

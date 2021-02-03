@@ -36,13 +36,7 @@ class Recorder {
     if (!this.stream.active) return;
     this.mediaRecorder = new MediaRecorder(this.stream, options);
 
-    console.log(
-      `Created MediaRecorder ${this.mediaRecorder} with options ${options}`
-    );
-
-    this.mediaRecorder.onstop = (event) => {
-      console.log("Recorded blobs", this.recorderBlobs);
-    };
+    this.mediaRecorder.onstop = (event) => {};
 
     this.mediaRecorder.ondataavailable = (event) => {
       if (!event.data || !event.data.size) return;
@@ -51,7 +45,6 @@ class Recorder {
     };
 
     this.mediaRecorder.start();
-    console.log(`Media recorder started`, this.mediaRecorder);
 
     this.recordingActive = true;
   }
@@ -60,7 +53,6 @@ class Recorder {
     if (!this.recordingActive) return;
     if (this.mediaRecorder.state === "inactive") return;
 
-    console.log("Media recorder stopped", this.userName);
     this.mediaRecorder.stop();
 
     this.recordingActive = false;
