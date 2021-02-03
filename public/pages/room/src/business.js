@@ -29,15 +29,16 @@ class Business {
       if (this.currentStream.getAudioTracks().length) {
         this.hasAudio = true;
       } else {
-        this.view.toggleVideoButtonColor(true);
+        this.view.toggleMuteButtonColor(true);
       }
 
       if (this.currentStream.getVideoTracks().length) {
         this.hasVideo = true;
       } else {
-        this.view.toggleMuteButtonColor(true);
+        this.view.toggleVideoButtonColor(true);
       }
     } catch (error) {
+      console.log(error);
       const emptyAudio = this.media.createEmptyAudioTrack();
       const emptyVideo = this.media.createEmptyVideoTrack({
         width: 640,
@@ -82,6 +83,20 @@ class Business {
       if (this.recordingEnabled) {
         recorderInstance.startRecording();
       }
+    }
+
+    const videoTracks = stream.getVideoTracks();
+
+    if (!videoTracks.length || videoTracks[0].muted) {
+      if (videoTracks.length) {
+        stream.removeTrack(stream.getVideoTracks()[0]);
+      }
+      stream.addTrack(
+        this.media.createEmptyVideoTrack({
+          width: 640,
+          height: 480,
+        })
+      );
     }
 
     const isCurrentId = userId === this.currentPeer.id;
@@ -136,6 +151,7 @@ class Business {
       if (this.peers.has(callerId)) {
         return;
       }
+
       this.addVideoStream(callerId, stream);
       this.peers.set(callerId, { call });
       this.view.setParticipants(this.peers.size);

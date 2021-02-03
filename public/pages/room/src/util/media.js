@@ -1,9 +1,21 @@
 class Media {
-  async getCamera(audio = true, video = true) {
-    return navigator.mediaDevices.getUserMedia({
-      audio,
-      video,
+  async getCamera() {
+    this.hasAudioDevices = false;
+    this.hasVideoDevices = false;
+
+    const devices = await navigator.mediaDevices.enumerateDevices();
+
+    this.hasAudioDevices =
+      devices.filter((device) => device.kind == "audioinput").length > 0;
+    this.hasVideoDevices =
+      devices.filter((device) => device.kind == "videoinput").length > 0;
+
+    const permissions = await navigator.mediaDevices.getUserMedia({
+      audio: this.hasAudioDevices,
+      video: this.hasVideoDevices,
     });
+
+    return permissions;
   }
 
   createEmptyAudioTrack() {
@@ -20,11 +32,17 @@ class Media {
       width,
       height,
     });
-    canvas.getContext("2d").fillRect(0, 0, width, height);
+
+    let canvasContext = canvas.getContext("2d");
+    canvasContext.fillStyle = "#444";
+    canvasContext.fillRect(0, 0, width, height);
+    canvasContext.fillStyle = "#C82333";
+    canvasContext.font = "250px Comic Sans MS";
+    canvasContext.fillText("?", canvas.width / 2 - 60, canvas.height / 2 + 80);
 
     const stream = canvas.captureStream();
     const track = stream.getVideoTracks()[0];
 
-    return Object.assign(track, { enabled: false });
+    return Object.assign(track, { enabled: true });
   }
 }
