@@ -24,12 +24,21 @@ class Business {
   async _init() {
     this.view.configureRecordButton(this.onRecordPressed.bind(this));
     this.view.configureLeaveButton(this.onLeavePressed.bind(this));
+    this.view.configureVideoButton(this.onVideoPressed.bind(this));
+    this.view.configureMuteButton(this.onMutePressed.bind(this));
 
     try {
       this.currentStream = await this.media.getCamera();
     } catch (error) {
-      this.currentStream = new MediaStream();
+      const emptyAudio = this.media.createEmptyAudioTrack();
+      const emptyVideo = this.media.createEmptyVideoTrack({
+        width: 640,
+        height: 480,
+      });
+
+      this.currentStream = new MediaStream([emptyAudio, emptyVideo]);
     }
+
     this.socket = this.socketBuilder
       .setOnUserConnected(this.onUserConnected())
       .setOnUserDisconnected(this.onUserDisconnected())
@@ -48,17 +57,18 @@ class Business {
   }
 
   addVideoStream(userId, stream = this.currentStream) {
-    const recorderInstance = new Recorder(userId, stream);
-    this.usersRecordings.set(recorderInstance.filename, recorderInstance);
+    if (stream.active) {
+      const recorderInstance = new Recorder(userId, stream);
+      this.usersRecordings.set(recorderInstance.filename, recorderInstance);
 
-    if (this.recordingEnabled) {
-      recorderInstance.startRecording();
+      if (this.recordingEnabled) {
+        recorderInstance.startRecording();
+      }
     }
 
     const isCurrentId = userId === this.currentPeer.id;
     this.view.renderVideo({
       userId,
-      muted: true,
       stream,
       isCurrentId,
     });
@@ -156,6 +166,14 @@ class Business {
     }
 
     this.usersRecordings.forEach((value, key) => value.download());
+  }
+
+  onVideoPressed() {
+    console.log("Stopped filming!");
+  }
+
+  onMutePressed() {
+    console.log("Stopped recording audio!");
   }
 
   // If an user join and exits the call during recording

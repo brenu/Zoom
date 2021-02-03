@@ -34,7 +34,6 @@ class View {
 
   appendToHTMLTree(userId, video, isCurrentId) {
     const div = document.createElement("div");
-
     div.id = userId;
     div.classList.add("wrapper");
     div.append(video);
@@ -44,6 +43,7 @@ class View {
 
     const videoGrid = document.getElementById("video-grid");
     videoGrid.append(div);
+    return;
   }
 
   setParticipants(count) {
@@ -87,5 +87,13 @@ class View {
 
   configureLeaveButton(command) {
     this.leaveBtn.addEventListener("click", this.onLeaveClick(command));
+  }
+
+  configureVideoButton(command) {
+    //
+  }
+
+  configureMuteButton(command) {
+    //
   }
 }
