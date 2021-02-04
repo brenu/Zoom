@@ -38,7 +38,6 @@ class Business {
         this.view.toggleVideoButtonColor(true);
       }
     } catch (error) {
-      console.log(error);
       const emptyAudio = this.media.createEmptyAudioTrack();
       const emptyVideo = this.media.createEmptyVideoTrack({
         width: 640,
@@ -87,24 +86,28 @@ class Business {
 
     const videoTracks = stream.getVideoTracks();
 
-    if (!videoTracks.length || videoTracks[0].muted) {
-      if (videoTracks.length) {
-        stream.removeTrack(stream.getVideoTracks()[0]);
-      }
-      stream.addTrack(
-        this.media.createEmptyVideoTrack({
-          width: 640,
-          height: 480,
-        })
-      );
-    }
+    while (!videoTracks[0].label) {
+      const isTrackMuted = videoTracks[0].muted;
 
-    const isCurrentId = userId === this.currentPeer.id;
-    this.view.renderVideo({
-      userId,
-      stream,
-      isCurrentId,
-    });
+      if (isTrackMuted || videoTracks.length === 0) {
+        if (videoTracks.length) {
+          stream.removeTrack(stream.getVideoTracks()[0]);
+        }
+        stream.addTrack(
+          this.media.createEmptyVideoTrack({
+            width: 640,
+            height: 480,
+          })
+        );
+      }
+
+      const isCurrentId = userId === this.currentPeer.id;
+      this.view.renderVideo({
+        userId,
+        stream,
+        isCurrentId,
+      });
+    }
   }
 
   onUserConnected() {
