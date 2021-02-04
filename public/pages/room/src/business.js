@@ -84,12 +84,12 @@ class Business {
       }
     }
 
-    const videoTracks = stream.getVideoTracks();
+    let videoTracks = stream.getVideoTracks();
 
-    while (!videoTracks[0].label) {
-      const isTrackMuted = videoTracks[0].muted;
+    Util.sleep(1000).then(() => {
+      const isTrackUnavailable = videoTracks[0] ? videoTracks[0].muted : true;
 
-      if (isTrackMuted || videoTracks.length === 0) {
+      if (isTrackUnavailable) {
         if (videoTracks.length) {
           stream.removeTrack(stream.getVideoTracks()[0]);
         }
@@ -100,14 +100,14 @@ class Business {
           })
         );
       }
+    });
 
-      const isCurrentId = userId === this.currentPeer.id;
-      this.view.renderVideo({
-        userId,
-        stream,
-        isCurrentId,
-      });
-    }
+    const isCurrentId = userId === this.currentPeer.id;
+    this.view.renderVideo({
+      userId,
+      stream,
+      isCurrentId,
+    });
   }
 
   onUserConnected() {
@@ -218,7 +218,7 @@ class Business {
       if (!isRecordingActive) continue;
 
       await rec.stopRecording();
-      this.playRecordings(key);
+      // this.playRecordings(key);
     }
   }
 

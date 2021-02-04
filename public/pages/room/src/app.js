@@ -17,6 +17,7 @@ const onload = () => {
 
   const view = new View();
   const media = new Media();
+  const Util = new Util();
 
   const deps = {
     view,

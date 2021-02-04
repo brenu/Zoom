@@ -34,4 +34,4 @@ const startServer = () => {
   console.log(`App runing at ${address}:${port}`);
 };
 
-server.listen(process.env.port || 3000, startServer);
+server.listen(process.env.PORT || 3000, startServer);
